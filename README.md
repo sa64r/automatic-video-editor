@@ -19,5 +19,5 @@ Method 2 (reduces need to rely on loudness of sound)
 4. Send video to be transcribed
 5. Get video transcriptions
 6. Cut video based on where words are spoken get info via transcription data (with some padding)
-7. Use transcription to create text graphics at specific times
+7. Use transcription to create text graphics at specific times put use transcript for text graphic if confidence is greater than 0.95
 8. Final process of video
