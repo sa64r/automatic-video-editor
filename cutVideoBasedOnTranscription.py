@@ -6,6 +6,7 @@ import datetime
 
 # CONSTANTS
 VIDEO_CLIP_BUFFER = 50
+JOIN_CLIP_BUFFER = 10
 
 
 startTime = datetime.datetime.now()
@@ -51,7 +52,23 @@ for i in range(len(sectionsToKeep)):
             sectionsToKeep[i][1] = sectionsToKeep[i][1] + VIDEO_CLIP_BUFFER
         checkIfClipsOverLap(i)
 
+for i in range(len(sectionsToKeep)):
+    if(i == 0):
+        sectionsToKeep[i][1] = sectionsToKeep[i][1] - \
+            VIDEO_CLIP_BUFFER + JOIN_CLIP_BUFFER
+    elif(i == len(sectionsToKeep)-1):
+        sectionsToKeep[i][0] = sectionsToKeep[i][0] + \
+            VIDEO_CLIP_BUFFER - JOIN_CLIP_BUFFER
+    else:
+        sectionsToKeep[i][0] = sectionsToKeep[i][0] + \
+            VIDEO_CLIP_BUFFER - JOIN_CLIP_BUFFER
+        sectionsToKeep[i][1] = sectionsToKeep[i][1] - \
+            VIDEO_CLIP_BUFFER + JOIN_CLIP_BUFFER
+
 # cut out sections from video
+sectionsToKeep[0][0] = sectionsToKeep[0][0] - VIDEO_CLIP_BUFFER
+sectionsToKeep[len(sectionsToKeep) -
+               1][0] = sectionsToKeep[len(sectionsToKeep)-1][0] + VIDEO_CLIP_BUFFER
 print(sectionsToKeep)
 subClips = []
 
