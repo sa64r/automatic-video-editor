@@ -1,10 +1,12 @@
 from secrets import randbelow
-from moviepy.editor import VideoFileClip, concatenate_videoclips, TextClip
+from moviepy.editor import *
 import os
 import json
 import datetime
+import string
 # CONSTANTS
 VIDEO_CLIP_BUFFER = 50
+JOIN_CLIP_BUFFER = 10
 
 
 # HELPER FUNCTIONS
@@ -20,8 +22,8 @@ def generateTextClip(word):
 startTime = datetime.datetime.now()
 
 print('Reading Video File')
-filename = 'C1114'
-video = VideoFileClip('videos/' + filename + '.MP4')
+filename = 'final_clip'
+video = VideoFileClip(filename + '.MP4')
 
 
 # import transcription JSON
@@ -34,6 +36,24 @@ sectionsToKeep = []
 for i in transcription['words']:
     sectionsToKeep.append([i['start'], i['end']])
 
+# creating text clips
+print('Creating Text Clips')
+NEXT_TEXT_CLIP_START_BUFFER = 5
+textClips = []
+nextClipStart = transcription['words'][0]['start'] + \
+    NEXT_TEXT_CLIP_START_BUFFER
+for i in transcription['words']:
+    textClip = TextClip(i['text'].upper().translate(str.maketrans('', '', string.punctuation)), font='Berlin-Sans-FB-Demi-Bold',
+                        fontsize=400, color='white')
+    textClip = textClip.set_pos('center').set_duration(
+        (i['end'] - i['start'] + 2 * JOIN_CLIP_BUFFER)/1000)
+    textClip = textClip.set_start(nextClipStart/1000)
+    nextClipStart = i['end'] + NEXT_TEXT_CLIP_START_BUFFER
+    if(i['confidence'] >= 0.5):
+        textClips.append(textClip)
+
+
+video = CompositeVideoClip([video, *textClips])
 
 # refine sections to keep
 
@@ -60,6 +80,19 @@ for i in range(len(sectionsToKeep)):
         else:
             sectionsToKeep[i][1] = sectionsToKeep[i][1] + VIDEO_CLIP_BUFFER
         checkIfClipsOverLap(i)
+
+for i in range(len(sectionsToKeep)):
+    if(i == 0):
+        sectionsToKeep[i][1] = sectionsToKeep[i][1] - \
+            VIDEO_CLIP_BUFFER + JOIN_CLIP_BUFFER
+    elif(i == len(sectionsToKeep)-1):
+        sectionsToKeep[i][0] = sectionsToKeep[i][0] + \
+            VIDEO_CLIP_BUFFER - JOIN_CLIP_BUFFER
+    else:
+        sectionsToKeep[i][0] = sectionsToKeep[i][0] + \
+            VIDEO_CLIP_BUFFER - JOIN_CLIP_BUFFER
+        sectionsToKeep[i][1] = sectionsToKeep[i][1] - \
+            VIDEO_CLIP_BUFFER + JOIN_CLIP_BUFFER
 
 # cut out sections from video
 print(sectionsToKeep)
