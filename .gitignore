@@ -163,4 +163,4 @@ cython_debug/
 *.mp4
 
 # transcriptions
-*.json
+transcriptions/*.json

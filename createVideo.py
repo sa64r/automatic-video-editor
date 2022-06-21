@@ -7,6 +7,7 @@ import string
 VIDEO_CLIP_BUFFER = 50  # used to pad around the duration words are said
 JOIN_CLIP_BUFFER = 10  # real buffer between sections
 VIDEO_OUTPUT_PATH = 'output/'
+STOP_WORDS = json.load(open('stop_words.json'))
 
 
 # HELPER FUNCTIONS
@@ -18,7 +19,12 @@ def generateTextClip(word):
     return textClip
 
 
+def isWordStopWord(word):
+    return word.lower() in STOP_WORDS
+
 # import videos
+
+
 def getStartTime():
     return datetime.datetime.now()
 
@@ -52,11 +58,11 @@ def createVideoWithTextGraphics(transcription, video):
     nextClipStart = transcription['words'][0]['start'] + \
         NEXT_TEXT_CLIP_START_BUFFER
     for i in transcription['words']:
-        textClip = TextClip(i['text'].upper().translate(str.maketrans('', '', string.punctuation)), font='Berlin-Sans-FB-Demi-Bold',
-                            fontsize=400, color='white')
-        textClip = textClip.set_pos('center').set_duration(
-            (i['end'] - i['start'] + 2 * JOIN_CLIP_BUFFER)/1000)
-        textClip = textClip.set_start(nextClipStart/1000)
+        # need to have a space to create an empty text image
+        word = ' ' if isWordStopWord(i['text']) else i['text']
+        textClip = TextClip(word.upper().translate(str.maketrans('', '', string.punctuation)), font='Berlin-Sans-FB-Demi-Bold',
+                            fontsize=400, color='white').set_pos('center').set_duration(
+            (i['end'] - i['start'] + 2 * JOIN_CLIP_BUFFER)/1000).set_start(nextClipStart/1000)
         nextClipStart = i['end'] + NEXT_TEXT_CLIP_START_BUFFER
         if(i['confidence'] >= 0.5):
             textClips.append(textClip)
@@ -133,7 +139,7 @@ def main(filename):
     sectionsToKeep = createSectionsToKeep(transcription)
     sectionsToKeep = refineSections(sectionsToKeep, video)
     videoWithText = createVideoWithTextGraphics(transcription, video)
-    createFinalVideo(video, False, sectionsToKeep)
+    # createFinalVideo(video, False, sectionsToKeep)
     createFinalVideo(videoWithText, True, sectionsToKeep)
     showTimeTaken(startTime)
 
