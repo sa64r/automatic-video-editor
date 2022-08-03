@@ -61,7 +61,7 @@ def createVideoWithTextGraphics(transcription, video):
         # need to have a space to create an empty text image
         word = ' ' if isWordStopWord(i['text']) else i['text']
         textClip = TextClip(word.upper().translate(str.maketrans('', '', string.punctuation)), font='Berlin-Sans-FB-Demi-Bold',
-                            fontsize=400, color='white').set_pos('center').set_duration(
+                            fontsize=400, color='white').set_pos(('center', 'bottom')).set_duration(
             (i['end'] - i['start'] + 2 * JOIN_CLIP_BUFFER)/1000).set_start(nextClipStart/1000)
         nextClipStart = i['end'] + NEXT_TEXT_CLIP_START_BUFFER
         if(i['confidence'] >= 0.5):
@@ -139,8 +139,8 @@ def main(filename):
     sectionsToKeep = createSectionsToKeep(transcription)
     sectionsToKeep = refineSections(sectionsToKeep, video)
     videoWithText = createVideoWithTextGraphics(transcription, video)
-    # createFinalVideo(video, False, sectionsToKeep)
-    createFinalVideo(videoWithText, True, sectionsToKeep)
+    createFinalVideo(video, False, sectionsToKeep)
+    #createFinalVideo(videoWithText, True, sectionsToKeep)
     showTimeTaken(startTime)
 
 
