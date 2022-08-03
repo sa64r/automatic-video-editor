@@ -36,6 +36,25 @@ def saveFinalVideo(final_clip, filename):
     final_clip.write_videofile(VIDEO_OUTPUT_PATH + '/' + filename)
 
 
+def uploadVideoToAssemblyAI(filename):
+
+    # used to upload file from computer
+    def read_file(filename, chunk_size=5242880):
+        with open(filename, 'rb') as _file:
+            while True:
+                data = _file.read(chunk_size)
+                if not data:
+                    break
+                yield data
+
+    headers = {'Content-Type': 'application/json',
+               'authorization': ASSEMBLY_AI_API_KEY}
+    response = requests.post('https://api.assemblyai.com/v2/upload',
+                             headers=headers,
+                             data=read_file(filename))
+    return response.json()['upload_url']
+
+
 def sendVideoToBeTranscribed(video_url):
     endpoint = "https://api.assemblyai.com/v2/transcript"
     json = {
@@ -61,7 +80,7 @@ def getTranscription(transcription_id):
     while (response.json())['status'] != 'completed' and (response.json())['status'] != 'error':
         response = requests.get(endpoint, headers=headers)
         print('Transcription Status: ' + (response.json())['status'])
-        time.sleep(1)
+        time.sleep(30)
     if (response.json())['status'] == 'error':
         print('TRANSCRIPTION ERROR: ' + (response.json())['error'])
         return None
@@ -91,11 +110,12 @@ def main():
     videos = uploadVideos(os.listdir(VIDEO_INPUT_PATH))
     final_clip = concatenateVideos(videos)
     saveFinalVideo(final_clip, FINAL_CLIP_FILE_NAME)
-    aws.create_s3_bucket(BUCKET_NAME)
-    aws.upload_video_to_s3(BUCKET_NAME, FINAL_CLIP_FILE_NAME,
-                           './' + VIDEO_OUTPUT_PATH)
-    print(ASSEMBLY_AI_API_KEY)
-    video_url = aws.get_video_url(BUCKET_NAME, FINAL_CLIP_FILE_NAME)
+    # aws.create_s3_bucket(BUCKET_NAME)
+    # aws.upload_video_to_s3(BUCKET_NAME, FINAL_CLIP_FILE_NAME,
+    #                        './' + VIDEO_OUTPUT_PATH)
+    # print(ASSEMBLY_AI_API_KEY)
+    # video_url = aws.get_video_url(BUCKET_NAME, FINAL_CLIP_FILE_NAME)
+    video_url = uploadVideoToAssemblyAI('./output/'+FINAL_CLIP_FILE_NAME)
     transcription_id = sendVideoToBeTranscribed(video_url)
     transcription = getTranscription(transcription_id)
     saveTranscription(transcription, FINAL_CLIP_NAME +

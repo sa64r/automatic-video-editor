@@ -109,8 +109,3 @@ def get_video_url(bucket_name, video_name):
         logging.error(e)
         return False
     return True
-
-# bucket_name = 'sagar-youtube-bucket'
-# create_s3_bucket(bucket_name)
-# upload_video_to_s3(bucket_name, 'final_clip.mp4', './output')
-# empty_and_delete_bucket(bucket_name)
