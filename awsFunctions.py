@@ -3,7 +3,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 
-def create_bucket(bucket_name, region="eu-west-2"):
+def create_s3_bucket(bucket_name, region="eu-west-2"):
     """Create an S3 bucket in a specified region
 
     If a region is not specified, the bucket is created in the S3 default
@@ -50,6 +50,7 @@ def upload_video_to_s3(bucket_name, videoFileName, videoFilePath):
     """
 
     # Upload the file
+    print("uploading", videoFileName, "to", bucket_name, '.....')
     try:
         s3 = boto3.resource('s3')
         s3_client = boto3.client('s3')
@@ -88,7 +89,28 @@ def empty_and_delete_bucket(bucket):
     return True
 
 
-bucket_name = 'sagar-youtube-bucket'
-create_bucket(bucket_name)
-upload_video_to_s3(bucket_name, 'final_clip.mp4', './output')
-empty_and_delete_bucket(bucket_name)
+def get_video_url(bucket_name, video_name):
+    """Get the video URL from S3
+
+    :return: Video URL
+    """
+
+    # Get the video URL
+    try:
+        s3 = boto3.resource('s3')
+        bucket = s3.Bucket(bucket_name)
+        for obj in bucket.objects.all():
+            if obj.key == video_name:
+                location = boto3.client('s3').get_bucket_location(
+                    Bucket=bucket_name)['LocationConstraint']
+                return "https://s3-%s.amazonaws.com/%s/%s" % (location, bucket_name, obj.key)
+
+    except ClientError as e:
+        logging.error(e)
+        return False
+    return True
+
+# bucket_name = 'sagar-youtube-bucket'
+# create_s3_bucket(bucket_name)
+# upload_video_to_s3(bucket_name, 'final_clip.mp4', './output')
+# empty_and_delete_bucket(bucket_name)

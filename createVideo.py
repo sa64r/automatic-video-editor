@@ -25,10 +25,6 @@ def isWordStopWord(word):
 # import videos
 
 
-def getStartTime():
-    return datetime.datetime.now()
-
-
 def importVideo(filename):
     print('Reading Video File')
     filename = 'final_clip'
@@ -127,13 +123,10 @@ def createFinalVideo(videoToCut, hasText, sectionsToKeep):
         VIDEO_OUTPUT_PATH + "final_clip-" + str(VIDEO_CLIP_BUFFER) + '- has text = ' + str(hasText) + ".mp4")
 
 
-def showTimeTaken(startTime):
-    print('Time Taken to Complete: ' + str(datetime.datetime.now() - startTime))
-
-
 # SEQUENCE OF FUNCTIONS
 def main(filename):
-    startTime = getStartTime()
+    print('Video Creation Started')
+
     video = importVideo(filename)
     transcription = importTranscription(filename)
     sectionsToKeep = createSectionsToKeep(transcription)
@@ -141,7 +134,3 @@ def main(filename):
     videoWithText = createVideoWithTextGraphics(transcription, video)
     createFinalVideo(video, False, sectionsToKeep)
     #createFinalVideo(videoWithText, True, sectionsToKeep)
-    showTimeTaken(startTime)
-
-
-main('final_clip')
