@@ -1,8 +1,12 @@
 from secrets import randbelow
 from moviepy.editor import *
+from moviepy.video.fx.all import *
+import cv2
 import json
 import datetime
 import string
+import awsFunctions as aws
+
 # CONSTANTS
 VIDEO_CLIP_BUFFER = 50  # used to pad around the duration words are said
 JOIN_CLIP_BUFFER = 10  # real buffer between sections
@@ -105,15 +109,67 @@ def refineSections(sectionsToKeep, video):
 
     return sectionsToKeep
 
+
+# TODO add face detection that works
+def getFaceLocation(FACE_DETECTION_FRAME_NAME, BUCKET_NAME):
+    aws.upload_image_to_s3(BUCKET_NAME, FACE_DETECTION_FRAME_NAME)
+    faces_details = aws.detect_faces(BUCKET_NAME, FACE_DETECTION_FRAME_NAME)
+    # faceCascade = cv2.CascadeClassifier(
+    #     cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    # faces = faceCascade.detectMultiScale(frame, 1.1, 4)
+    faces = []
+    print('face_details', faces_details)
+    for face in faces_details:
+        faces.append([face['BoundingBox']['Left'], face['BoundingBox']['Top'],
+                     face['BoundingBox']['Width'], face['BoundingBox']['Height']])
+
+    return faces
+
+
+def zoomToFace(clip, FACE_DETECTION_FRAME_NAME, BUCKET_NAME):
+    clip.save_frame(FACE_DETECTION_FRAME_NAME, t=1)
+    faces = getFaceLocation(FACE_DETECTION_FRAME_NAME, BUCKET_NAME)
+    width, height = clip.size
+    face_centers = []
+    face_detectors = []
+    for (x, y, w, h) in faces:
+        x = x * width
+        y = y * height
+        w = w * width
+        h = h * height
+        face_centers.append([(x+w)/2, (y+h)/2])
+        face_detectors.append(TextClip('.', font='Arial', fontsize=300, color='red').set_position(
+            [(x+w)/2, (y+h)/2]).set_duration(clip.duration))
+    print('faces', faces)
+    print('face_centers', face_centers)
+    clip = clip.resize(lambda t: 1 + 0.04 * t)
+    clip = clip.set_position(('center', 'center'))
+
+    clip = CompositeVideoClip([clip, *face_detectors])
+    return clip
+
+
+def addZoomingEffects(subClips, FACE_DETECTION_FRAME_NAME, BUCKET_NAME):
+    for i in range(len(subClips)):
+        if i % 2 == 0:
+            subClips[i] = zoomToFace(
+                subClips[i], FACE_DETECTION_FRAME_NAME, BUCKET_NAME)
+    return subClips
+
  # cut out sections from video
 
 
-def createFinalVideo(videoToCut, hasText, sectionsToKeep):
+def getSubClips(videoToCut, sectionsToKeep):
     subClips = []
     print('Cutting Clips')
     for i in sectionsToKeep:
         subClips.append(videoToCut.subclip(
             (i[0])/1000, (i[1])/1000))
+
+    return subClips
+
+
+def createFinalVideo(subClips, hasText):
 
     # join sections together
     final_clip = concatenate_videoclips(subClips)
@@ -124,13 +180,20 @@ def createFinalVideo(videoToCut, hasText, sectionsToKeep):
 
 
 # SEQUENCE OF FUNCTIONS
-def main(filename):
+def main(filename, FACE_DETECTION_FRAME_NAME, BUCKET_NAME, hasText=False):
     print('Video Creation Started')
 
     video = importVideo(filename)
     transcription = importTranscription(filename)
     sectionsToKeep = createSectionsToKeep(transcription)
     sectionsToKeep = refineSections(sectionsToKeep, video)
-    videoWithText = createVideoWithTextGraphics(transcription, video)
-    createFinalVideo(video, False, sectionsToKeep)
-    #createFinalVideo(videoWithText, True, sectionsToKeep)
+    subClips = getSubClips(video, sectionsToKeep)
+    subClips = addZoomingEffects(
+        subClips, FACE_DETECTION_FRAME_NAME, BUCKET_NAME)
+
+    if(hasText):
+        videoWithText = createVideoWithTextGraphics(transcription, video)
+        subClipsWithText = getSubClips(videoWithText, sectionsToKeep)
+        createFinalVideo(subClipsWithText, True)
+
+    createFinalVideo(subClips, False)

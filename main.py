@@ -103,6 +103,7 @@ def showTimeTaken(startTime):
 def main():
     BUCKET_NAME = 'sagar-youtube-video'
     FINAL_CLIP_NAME = 'final_clip'
+    FACE_DETECTION_FRAME_NAME = 'temp_frame.png'
     FINAL_CLIP_FILE_NAME = FINAL_CLIP_NAME + '.mp4'
 
     startTime = getStartTime()
@@ -110,18 +111,22 @@ def main():
     videos = uploadVideos(os.listdir(VIDEO_INPUT_PATH))
     final_clip = concatenateVideos(videos)
     saveFinalVideo(final_clip, FINAL_CLIP_FILE_NAME)
-    # aws.create_s3_bucket(BUCKET_NAME)
-    # aws.upload_video_to_s3(BUCKET_NAME, FINAL_CLIP_FILE_NAME,
-    #                        './' + VIDEO_OUTPUT_PATH)
-    # print(ASSEMBLY_AI_API_KEY)
-    # video_url = aws.get_video_url(BUCKET_NAME, FINAL_CLIP_FILE_NAME)
-    video_url = uploadVideoToAssemblyAI('./output/'+FINAL_CLIP_FILE_NAME)
+
+    # uploads video to amazon s3
+    # deletes all buckets in case bucket already exists
+    aws.empty_and_delete_bucket(BUCKET_NAME)
+    aws.create_s3_bucket(BUCKET_NAME)
+    aws.upload_video_to_s3(BUCKET_NAME, FINAL_CLIP_FILE_NAME,
+                           './' + VIDEO_OUTPUT_PATH)
+    video_url = aws.get_video_url(BUCKET_NAME, FINAL_CLIP_FILE_NAME)
+
+    # video_url = uploadVideoToAssemblyAI('./output/'+FINAL_CLIP_FILE_NAME)
     transcription_id = sendVideoToBeTranscribed(video_url)
     transcription = getTranscription(transcription_id)
     saveTranscription(transcription, FINAL_CLIP_NAME +
                       '.json', './transcriptions')
+    cv.main(FINAL_CLIP_NAME, FACE_DETECTION_FRAME_NAME, BUCKET_NAME)
     aws.empty_and_delete_bucket(BUCKET_NAME)
-    cv.main(FINAL_CLIP_NAME)
 
     showTimeTaken(startTime)
 

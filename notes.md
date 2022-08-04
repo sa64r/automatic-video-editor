@@ -6,3 +6,8 @@ Using these instructions = https://stackoverflow.com/questions/51928807/moviepy-
 
 Amazon Elastic Transcoder
 https://aws.amazon.com/elastictranscoder/details/
+
+pip install boto3
+pip install moviepy
+pip install jumpcutter
+pip install opencv-python

@@ -23,7 +23,6 @@ def create_s3_bucket(bucket_name, region="eu-west-2"):
         print('Bucket Created: ' + bucket_name)
         response_public = s3_client.put_bucket_acl(
             Bucket=bucket_name, ACL='public-read')
-        print("pubic", response_public)
 
         website_configuration = {
             'ErrorDocument': {'Key': 'error.html'},
@@ -32,8 +31,6 @@ def create_s3_bucket(bucket_name, region="eu-west-2"):
 
         response_bucket_website = s3_client.put_bucket_website(
             Bucket=bucket_name, WebsiteConfiguration=website_configuration)
-
-        print("bucket website", response_bucket_website)
     except ClientError as e:
         logging.error(e)
         return False
@@ -56,12 +53,10 @@ def upload_video_to_s3(bucket_name, videoFileName, videoFilePath):
         s3_client = boto3.client('s3')
         response = s3.Bucket(bucket_name).upload_file(
             videoFilePath + '/' + videoFileName, videoFileName)
-        print(response)
+        print('Uploaded to Bucket: ' + bucket_name)
 
         response_object_acl = s3_client.put_object_acl(
             ACL='public-read', Bucket=bucket_name, Key=videoFileName)
-
-        print("object acl", response_object_acl)
 
     except ClientError as e:
         logging.error(e)
@@ -105,6 +100,57 @@ def get_video_url(bucket_name, video_name):
                     Bucket=bucket_name)['LocationConstraint']
                 return "https://s3-%s.amazonaws.com/%s/%s" % (location, bucket_name, obj.key)
 
+    except ClientError as e:
+        logging.error(e)
+        return False
+    return True
+
+
+def upload_image_to_s3(bucket_name, imageFileName):
+    """Upload an image to S3
+
+    :param bucket_name: Bucket to upload to
+    :param object_name: Object name to use when uploading
+    :param file_path: Path to the file to upload
+    :return: True if file was uploaded, else False
+    """
+
+    # Upload the file
+    print("uploading", imageFileName, "to", bucket_name, '.....')
+    try:
+        s3 = boto3.resource('s3')
+        s3_client = boto3.client('s3')
+        response = s3.Bucket(bucket_name).upload_file(
+            imageFileName, imageFileName)
+        print('Uploaded to Bucket: ' + bucket_name)
+
+        response_object_acl = s3_client.put_object_acl(
+            ACL='public-read', Bucket=bucket_name, Key=imageFileName)
+
+    except ClientError as e:
+        logging.error(e)
+        return False
+    return True
+
+# upload and detect faces in image using rekognition
+
+
+def detect_faces(bucket_name, image_name):
+    """Detect faces in an image
+
+    :param bucket_name: Bucket name
+    :param image_name: Image name
+    :return: True if faces detected, else False
+    """
+
+    # Detect faces in the image
+    try:
+        rekognition = boto3.client('rekognition')
+        response = rekognition.detect_faces(
+            Image={'S3Object': {'Bucket': bucket_name, 'Name': image_name}},
+            Attributes=['ALL'])
+        print('Detected faces in ' + image_name)
+        return response
     except ClientError as e:
         logging.error(e)
         return False
