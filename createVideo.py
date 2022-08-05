@@ -1,6 +1,6 @@
 from secrets import randbelow
 from moviepy.editor import *
-from moviepy.video.fx.all import *
+from moviepy.video.fx.all import crop, resize
 import cv2
 import json
 import datetime
@@ -117,37 +117,45 @@ def getFaceLocation(FACE_DETECTION_FRAME_NAME, BUCKET_NAME):
     faces = []
     for face in faces_details['FaceDetails']:
         faces.append(face['BoundingBox'])
-
     return faces
 
 
-def zoomToFace(clip, FACE_DETECTION_FRAME_NAME, BUCKET_NAME):
+def zoomOnFace(clip, FACE_DETECTION_FRAME_NAME, BUCKET_NAME):
     clip.save_frame(FACE_DETECTION_FRAME_NAME, t=1)
     faces = getFaceLocation(FACE_DETECTION_FRAME_NAME, BUCKET_NAME)
     width, height = clip.size
+    print('Original Size', width, height)
     face_centers = []
-    face_detectors = []
+    # face_detectors = []
     for face in faces:
         x = face['Left'] * width
         y = face['Top'] * height
         w = face['Width'] * width
         h = face['Height'] * height
-        print('x', 'y', 'w', 'h', x, y, w, h)
-        face_centers.append([(x+w)/2, (y+h)/2])
-        face_detectors.append(TextClip('0', font='Arial', fontsize=300, color='red').set_position(
-            [x+w/2, y+h/2]).set_duration(clip.duration))
-    clip = clip.resize(lambda t: 1 + 0.04 * t)
+        face_centers.append([x+w/2, y+h/2])
+        # face_detectors.append(TextClip('0', font='Arial', fontsize=300, color='red').set_position(
+        #     [x+w/2, y+h/2]).set_duration(clip.duration))
+
+    print(face_centers[0][0], face_centers[0][1], width/1.5, height/1.5)
+    clip = crop(clip, x_center=face_centers[0][0], y_center=face_centers[0]
+                [1], width=width/2, height=height/2)
+
+    clip = clip.resize(width=width, height=height)  # resize to original size
+
+    # clip = clip.resize(lambda t: 1 + 0.04 * t)
     clip = clip.set_position(('center', 'center'))
 
-    clip = CompositeVideoClip([clip, *face_detectors])
+    clip = CompositeVideoClip([clip])
     return clip
 
 
-def addZoomingEffects(subClips, FACE_DETECTION_FRAME_NAME, BUCKET_NAME):
+def addZoomingEffects(subClips, FACE_DETECTION_FRAME_NAME, BUCKET_NAME, zoomFrequency=3):
+
     for i in range(len(subClips)):
-        if i % 2 == 0:
-            subClips[i] = zoomToFace(
+        if i % zoomFrequency == 0:
+            subClips[i] = zoomOnFace(
                 subClips[i], FACE_DETECTION_FRAME_NAME, BUCKET_NAME)
+            print('SUBCLIP SIZE', subClips[i].size)
     return subClips
 
  # cut out sections from video
