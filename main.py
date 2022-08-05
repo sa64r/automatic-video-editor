@@ -1,6 +1,6 @@
+import os
 import json
 from moviepy.editor import VideoFileClip, concatenate_videoclips
-import os
 import awsFunctions as aws
 import requests
 from dotenv import load_dotenv
@@ -33,7 +33,10 @@ def concatenateVideos(videos):
 
 # Save the final video
 def saveFinalVideo(final_clip, filename):
-    final_clip.write_videofile(VIDEO_OUTPUT_PATH + '/' + filename)
+    final_clip.write_videofile(VIDEO_OUTPUT_PATH + '/' + filename, codec='libx264', 
+  audio_codec='aac', 
+  temp_audiofile='temp-audio.m4a', 
+  remove_temp=True) #added extra fields so that sound stays on MAC
 
 
 def uploadVideoToAssemblyAI(filename):
@@ -50,7 +53,7 @@ def uploadVideoToAssemblyAI(filename):
     headers = {'Content-Type': 'application/json',
                'authorization': ASSEMBLY_AI_API_KEY}
     response = requests.post('https://api.assemblyai.com/v2/upload',
-                             headers=headers,
+                             headers=headers, 
                              data=read_file(filename))
     return response.json()['upload_url']
 

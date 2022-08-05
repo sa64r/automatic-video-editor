@@ -120,9 +120,7 @@ def getFaceLocation(FACE_DETECTION_FRAME_NAME, BUCKET_NAME):
     faces = []
     print('face_details', faces_details)
     for face in faces_details:
-        faces.append([face['BoundingBox']['Left'], face['BoundingBox']['Top'],
-                     face['BoundingBox']['Width'], face['BoundingBox']['Height']])
-
+        faces.append(face[0]['BoundingBox'])
     return faces
 
 
@@ -132,16 +130,14 @@ def zoomToFace(clip, FACE_DETECTION_FRAME_NAME, BUCKET_NAME):
     width, height = clip.size
     face_centers = []
     face_detectors = []
-    for (x, y, w, h) in faces:
-        x = x * width
-        y = y * height
-        w = w * width
-        h = h * height
+    for face in faces:
+        x = face['Left'] * width
+        y = face['Top'] * height
+        w = face['Width'] * width
+        h = face['Height'] * height
         face_centers.append([(x+w)/2, (y+h)/2])
         face_detectors.append(TextClip('.', font='Arial', fontsize=300, color='red').set_position(
             [(x+w)/2, (y+h)/2]).set_duration(clip.duration))
-    print('faces', faces)
-    print('face_centers', face_centers)
     clip = clip.resize(lambda t: 1 + 0.04 * t)
     clip = clip.set_position(('center', 'center'))
 
@@ -176,7 +172,10 @@ def createFinalVideo(subClips, hasText):
 
     # save video
     final_clip.write_videofile(
-        VIDEO_OUTPUT_PATH + "final_clip-" + str(VIDEO_CLIP_BUFFER) + '- has text = ' + str(hasText) + ".mp4")
+        VIDEO_OUTPUT_PATH + "final_clip-" + str(VIDEO_CLIP_BUFFER) + '- has text = ' + str(hasText) + ".mp4",  codec='libx264', 
+  audio_codec='aac', 
+  temp_audiofile='temp-audio.m4a', 
+  remove_temp=True)
 
 
 # SEQUENCE OF FUNCTIONS
