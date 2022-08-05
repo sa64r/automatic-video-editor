@@ -33,10 +33,10 @@ def concatenateVideos(videos):
 
 # Save the final video
 def saveFinalVideo(final_clip, filename):
-    final_clip.write_videofile(VIDEO_OUTPUT_PATH + '/' + filename, codec='libx264', 
-  audio_codec='aac', 
-  temp_audiofile='temp-audio.m4a', 
-  remove_temp=True) #added extra fields so that sound stays on MAC
+    final_clip.write_videofile(VIDEO_OUTPUT_PATH + '/' + filename, codec='libx264',
+                               audio_codec='aac',
+                               temp_audiofile='temp-audio.m4a',
+                               remove_temp=True)  # added extra fields so that sound stays on MAC
 
 
 def uploadVideoToAssemblyAI(filename):
@@ -53,7 +53,7 @@ def uploadVideoToAssemblyAI(filename):
     headers = {'Content-Type': 'application/json',
                'authorization': ASSEMBLY_AI_API_KEY}
     response = requests.post('https://api.assemblyai.com/v2/upload',
-                             headers=headers, 
+                             headers=headers,
                              data=read_file(filename))
     return response.json()['upload_url']
 
@@ -111,9 +111,9 @@ def main():
 
     startTime = getStartTime()
 
-    videos = uploadVideos(os.listdir(VIDEO_INPUT_PATH))
-    final_clip = concatenateVideos(videos)
-    saveFinalVideo(final_clip, FINAL_CLIP_FILE_NAME)
+    # videos = uploadVideos(os.listdir(VIDEO_INPUT_PATH))
+    # final_clip = concatenateVideos(videos)
+    # saveFinalVideo(final_clip, FINAL_CLIP_FILE_NAME)
 
     # uploads video to amazon s3
     # deletes all buckets in case bucket already exists
@@ -123,11 +123,11 @@ def main():
                            './' + VIDEO_OUTPUT_PATH)
     video_url = aws.get_video_url(BUCKET_NAME, FINAL_CLIP_FILE_NAME)
 
-    # video_url = uploadVideoToAssemblyAI('./output/'+FINAL_CLIP_FILE_NAME)
-    transcription_id = sendVideoToBeTranscribed(video_url)
-    transcription = getTranscription(transcription_id)
-    saveTranscription(transcription, FINAL_CLIP_NAME +
-                      '.json', './transcriptions')
+    # # video_url = uploadVideoToAssemblyAI('./output/'+FINAL_CLIP_FILE_NAME)
+    # transcription_id = sendVideoToBeTranscribed(video_url)
+    # transcription = getTranscription(transcription_id)
+    # saveTranscription(transcription, FINAL_CLIP_NAME +
+    #                   '.json', './transcriptions')
     cv.main(FINAL_CLIP_NAME, FACE_DETECTION_FRAME_NAME, BUCKET_NAME)
     aws.empty_and_delete_bucket(BUCKET_NAME)
 

@@ -114,13 +114,10 @@ def refineSections(sectionsToKeep, video):
 def getFaceLocation(FACE_DETECTION_FRAME_NAME, BUCKET_NAME):
     aws.upload_image_to_s3(BUCKET_NAME, FACE_DETECTION_FRAME_NAME)
     faces_details = aws.detect_faces(BUCKET_NAME, FACE_DETECTION_FRAME_NAME)
-    # faceCascade = cv2.CascadeClassifier(
-    #     cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    # faces = faceCascade.detectMultiScale(frame, 1.1, 4)
     faces = []
-    print('face_details', faces_details)
-    for face in faces_details:
-        faces.append(face[0]['BoundingBox'])
+    for face in faces_details['FaceDetails']:
+        faces.append(face['BoundingBox'])
+
     return faces
 
 
@@ -135,9 +132,10 @@ def zoomToFace(clip, FACE_DETECTION_FRAME_NAME, BUCKET_NAME):
         y = face['Top'] * height
         w = face['Width'] * width
         h = face['Height'] * height
+        print('x', 'y', 'w', 'h', x, y, w, h)
         face_centers.append([(x+w)/2, (y+h)/2])
-        face_detectors.append(TextClip('.', font='Arial', fontsize=300, color='red').set_position(
-            [(x+w)/2, (y+h)/2]).set_duration(clip.duration))
+        face_detectors.append(TextClip('0', font='Arial', fontsize=300, color='red').set_position(
+            [x+w/2, y+h/2]).set_duration(clip.duration))
     clip = clip.resize(lambda t: 1 + 0.04 * t)
     clip = clip.set_position(('center', 'center'))
 
@@ -172,10 +170,10 @@ def createFinalVideo(subClips, hasText):
 
     # save video
     final_clip.write_videofile(
-        VIDEO_OUTPUT_PATH + "final_clip-" + str(VIDEO_CLIP_BUFFER) + '- has text = ' + str(hasText) + ".mp4",  codec='libx264', 
-  audio_codec='aac', 
-  temp_audiofile='temp-audio.m4a', 
-  remove_temp=True)
+        VIDEO_OUTPUT_PATH + "final_clip-" + str(VIDEO_CLIP_BUFFER) + '- has text = ' + str(hasText) + ".mp4",  codec='libx264',
+        audio_codec='aac',
+        temp_audiofile='temp-audio.m4a',
+        remove_temp=True)
 
 
 # SEQUENCE OF FUNCTIONS
