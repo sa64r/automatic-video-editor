@@ -123,9 +123,13 @@ def getFaceLocation(FACE_DETECTION_FRAME_NAME, BUCKET_NAME):
 # zooms into face area and crops video
 
 
-def zoomOnFace(clip, FACE_DETECTION_FRAME_NAME, BUCKET_NAME,):
+def zoomOnFace(clip, FACE_DETECTION_FRAME_NAME, BUCKET_NAME):
     clip.save_frame(FACE_DETECTION_FRAME_NAME, t=1)
     faces = getFaceLocation(FACE_DETECTION_FRAME_NAME, BUCKET_NAME)
+    print('faces: ', faces)
+    if(len(faces) <= 0):
+        return clip
+
     width, height = clip.size
 
     face_centers = []
@@ -136,14 +140,24 @@ def zoomOnFace(clip, FACE_DETECTION_FRAME_NAME, BUCKET_NAME,):
         h = face['Height'] * height
         face_centers.append([x+w/2, y+h/2])
 
+    print('x: ', face_centers[0][0])
+    print('y: ', face_centers[0][1])
+    print('w: ', width/2)
+    print('h: ', height/2)
+
+    print('Crop Edges')
+    print('top: ', face_centers[0][1] - height/2)
+    print('left: ', face_centers[0][0] - width/2)
+    print('bottom: ', face_centers[0][1] + height/2)
+    print('right: ', face_centers[0][0] + width/2)
+
     clip = crop(clip, x_center=face_centers[0][0], y_center=face_centers[0]
-                [1], width=width/2, height=height/2)
-
-    clip = clip.resize(width=width, height=height)  # resize to original size
-
+                [1], width=width/2.5, height=height/2.5)
+    # resize to original size
+    clip = clip.resize(width=width, height=height)
     clip = clip.set_position(('center', 'center'))
-
     clip = CompositeVideoClip([clip])
+
     return clip
 
 
