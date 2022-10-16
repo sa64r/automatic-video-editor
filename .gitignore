@@ -162,5 +162,9 @@ cython_debug/
 # videos
 *.mp4
 
+# pictures
+*.png 
+*.jpg
+
 # transcriptions
 transcriptions/*.json
