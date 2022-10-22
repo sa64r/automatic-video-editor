@@ -1,13 +1,14 @@
+import datetime
+import createVideo as cv
+import time
+from dotenv import load_dotenv
+import requests
+import awsFunctions as aws
+from moviepy.editor import VideoFileClip, concatenate_videoclips
 import os
 import json
-os.environ["IMAGEIO_FFMPEG_EXE"] = "/opt/homebrew/bin/ffmpeg" #need to implement this for MAC
-from moviepy.editor import VideoFileClip, concatenate_videoclips
-import awsFunctions as aws
-import requests
-from dotenv import load_dotenv
-import time
-import createVideo as cv
-import datetime
+# need to implement this for MAC
+os.environ["IMAGEIO_FFMPEG_EXE"] = "/opt/homebrew/bin/ffmpeg"
 
 load_dotenv()
 
@@ -20,10 +21,21 @@ VIDEO_INPUT_PATH = './videos'
 
 def uploadVideos(videoFilenames):
     videos = []
+    filtered = []
+
+    # filter out the .DS_Store file
+    for filename in videoFilenames:
+        if (filename[-3:] == 'MP4' or filename[-3:] == 'mp4'):
+            filtered.append(filename)
+
+    # filename is normally CXXXX.mp4 so this remives the C and the .mp4 and sorts by the XXXX
+    filtered.sort(key=lambda x: int(x.split('.')[0].split('C')[1]))
 
     # Format each video file
-    for filename in videoFilenames:
-        videos.append(VideoFileClip('videos/' + filename))
+    for filename in filtered:
+        if (filename[-3:] == 'MP4' or filename[-3:] == 'mp4'):
+            print(filename)
+            videos.append(VideoFileClip(VIDEO_INPUT_PATH + '/' + filename))
     return videos
 
 
